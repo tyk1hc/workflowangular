@@ -94,5 +94,6 @@ jobs:
           username: ${{ env.AZURE_VM_ADMINISTRATOR }}
           # Path to the SSH private key file.
           key: ${{ env.AZURE_VM_SSH_PRIVATE_KEY}}
-          source: '${{ github.workspace }}/angular_deploy_dist/'
-          target: 'testapplication' # Specify the path of the target folder on the server (e.g., /var/www/html/front/)
+          source: ${{ github.workspace }}/angular_deploy_dist/
+          target: testapplication # Specify the path of the target folder on the server (e.g., /var/www/html/front/)
+          strip_components: 2
