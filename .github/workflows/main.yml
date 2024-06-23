@@ -7,7 +7,7 @@ on:
     workflow_dispatch:
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest # If you are using Nginx server
     environment: Development
 
@@ -37,7 +37,23 @@ jobs:
       - name: Build Angular app
         run: ng build --configuration production
 
-      - name: SSH Remote To Azure Virtual Machine
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v3
+        with:
+          name: angular_deploy_dist
+          path: ${{ github.workspace }}/dist
+
+  deploy:
+    runs-on: ubuntu-latest # If you are using Nginx server
+    environment: Development
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: angular_deploy_dist
+
+      - name: Remove Files on Nginx Server
         uses: appleboy/ssh-action@master
         env:
           AZURE_VM_ADMINISTRATOR : ${{ secrets.AZURE_VM_ADMINISTRATOR }}
@@ -51,4 +67,24 @@ jobs:
           # Path to the SSH private key file.
           key: ${{ env.AZURE_VM_SSH_PRIVATE_KEY}}
           # Commands to be executed.
-          script: mkdir -p testapplication
+          script: |
+            mkdir -p testapplication
+            rm -rf testapplication/*
+
+      - name: Deploy Files to Nginx Server
+        uses: appleboy/scp-action@v0.1.7
+        env:
+          AZURE_VM_ADMINISTRATOR : ${{ secrets.AZURE_VM_ADMINISTRATOR }}
+          AZURE_VM_IP_ADDRESS : ${{ secrets.AZURE_VM_IP_ADDRESS }}
+          AZURE_VM_SSH_PRIVATE_KEY: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}
+        with:
+          # SSH host address.
+          host: ${{ env.AZURE_VM_IP_ADDRESS }}
+          # SSH username.
+          username: ${{ env.AZURE_VM_ADMINISTRATOR }}
+          # Path to the SSH private key file.
+          key: ${{ env.AZURE_VM_SSH_PRIVATE_KEY}}
+          source: ${{ github.workspace }}/angular_deploy_dist
+          target: testapplication # Specify the path of the target folder on the server (e.g., /var/www/html/front/)
+          strip_components: 2# Removes a specified number of directory components (folders) from the beginning of a file path.
+                              # This can be used to deploy only specific folders and files.
