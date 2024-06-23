@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v2
@@ -49,10 +49,14 @@ jobs:
     needs: build
 
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Download artifact from build job
         uses: actions/download-artifact@v3
         with:
           name: angular_deploy_dist
+          path: ${{ github.workspace }}
 
       - name: Remove Files on Nginx Server
         uses: appleboy/ssh-action@master
