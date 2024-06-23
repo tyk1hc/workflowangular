@@ -9,6 +9,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest # If you are using Nginx server
+    environment: Development
 
     steps:
       - name: Checkout Code
@@ -35,3 +36,19 @@ jobs:
 
       - name: Build Angular app
         run: ng build --configuration production
+
+      - name: SSH Remote To Azure Virtual Machine
+        uses: appleboy/ssh-action@main
+        env:
+          AZURE_VM_ADMINISTRATOR : ${{ secrets.AZURE_VM_ADMINISTRATOR }}
+          AZURE_VM_IP_ADDRESS : ${{ secrets.AZURE_VM_IP_ADDRESS }}
+          AZURE_VM_SSH_PRIVATE_KEY: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}
+        with:
+          # SSH host address.
+          host: ${{ env.AZURE_VM_ADMINISTRATOR }}
+          # SSH username.
+          username: ${{ env.AZURE_VM_ADMINISTRATOR }}
+          # Path to the SSH private key file.
+          key: ${{ env.AZURE_VM_SSH_PRIVATE_KEY}}
+          # Commands to be executed.
+          script: mkdir -p testapplication
