@@ -56,7 +56,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: angular_deploy_dist
-          path: ${{ github.workspace }}
+          path: ${{ github.workspace }}/angular_deploy_dist
 
       - name: Remove Files on Nginx Server
         uses: appleboy/ssh-action@master
