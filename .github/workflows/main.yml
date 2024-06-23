@@ -37,6 +37,11 @@ jobs:
       - name: Build Angular app
         run: ng build --configuration production
 
+      - name: Test Secret Information
+        run: |
+          echo '${{ secrets.AZURE_VM_ADMINISTRATOR }}'
+          echo '${{ secrets.AZURE_VM_IP_ADDRESS }}'
+
       - name: SSH Remote To Azure Virtual Machine
         uses: appleboy/ssh-action@master
         env:
