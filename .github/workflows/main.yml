@@ -20,7 +20,15 @@ jobs:
           node-version: 14 # Ensure Node.js version is compatible with your Angular project
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+            run: |
+            if [ -e yarn.lock ]; then
+                yarn install --frozen-lockfile
+            elif [ -e package-lock.json ]; then
+                npm ci
+            else
+                npm i
+            fi
 
       - name: Install Angular CLI
         run: npm install -g @angular/cli # Install Angular CLI in the workflow environment
