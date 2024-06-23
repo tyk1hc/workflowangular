@@ -78,7 +78,7 @@ jobs:
 
       - name: Check Download Artifact
         run: |
-          cd ${{ github.workspace }}
+          cd ${{ github.workspace }}/angular_deploy_dist
           ls
 
       - name: Deploy Files to Nginx Server
