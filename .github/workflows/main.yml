@@ -18,16 +18,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Connect to Azure Container Registry (ACR)
-      - uses: Azure/docker-login@v1
-        with:
-          # Container registry username
-          username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
-          # Container registry password
-          password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
-          # Container registry server url
-          login-server: ${{ env.AZURE_CONATINER_REGISTRY_NAME }}.azurecr.io
-
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
@@ -55,10 +45,28 @@ jobs:
           cp ./Dockerfile ./dist/Dockerfile
           cp ./nginx.conf ./dist/nginx.conf
 
-      # Container build and push to a Azure Container Registry (ACR)
-      - id: docker-build-push
-        name: Docker build and push to container registry
-        working-directory: ./dist
-        run: |
-          docker build . -t ${{ env.AZURE_CONATINER_REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}
-          docker push ${{ env.AZURE_CONATINER_REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}
+      # Connect & build and push to Azure Container Registry (ACR)
+      - name: 'Build and push image'
+        uses: Azure/docker-login@v1
+        with:
+          # Container registry username
+          username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
+          # Container registry password
+          password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
+          # Container registry server url
+          login-server: ${{ env.AZURE_CONATINER_REGISTRY_NAME }}.azurecr.io
+      - run: |
+          docker build . -t ${{ env.AZURE_CONATINER_REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
+          docker push ${{ env.AZURE_CONATINER_REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
+
+      #- name: 'Deploy to Azure Container Instances'
+      #  uses: 'azure/aci-deploy@v1'
+      #  with:
+      #    resource-group: ${{ secrets.RESOURCE_GROUP }}
+      #    dns-name-label: ${{ secrets.RESOURCE_GROUP }}${{ github.run_number }}
+      #    image: ${{ secrets.REGISTRY_LOGIN_SERVER }}/sampleapp:${{ github.sha }}
+      #    registry-login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+      #    registry-username: ${{ secrets.REGISTRY_USERNAME }}
+      #    registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+      #    name: aci-sampleapp
+      #    location: 'west us'
