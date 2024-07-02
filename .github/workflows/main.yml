@@ -1,6 +1,3 @@
-env:
-  APP_NAME: genai-angular-frontned
-
 name: Deploy Frontend to Container App
 
 on:
@@ -13,6 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest # If you are using Nginx server
     environment: Development
+    env:
+      APP_NAME: genai-angular-frontned
+      AZURE_CONATINER_REGISTRY_NAME: ${{ vars.AZURE_CONATINER_REGISTRY_NAME }}
 
     steps:
       - name: Checkout Code
