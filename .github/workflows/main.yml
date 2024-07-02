@@ -1,4 +1,7 @@
-name: Deploy to Linux Server
+env:
+  APP_NAME: genai-angular-frontned
+
+name: Deploy Frontend to Container App
 
 on:
     push:
@@ -14,6 +17,13 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      # Connect to Azure Container Registry (ACR)
+      - uses: azure/docker-login@v3.2.0
+        with:
+          login-server: ${{ env.AZURE_CONATINER_REGISTRY_NAME }}.azurecr.io
+          username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
+          password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v2
@@ -37,63 +47,16 @@ jobs:
       - name: Build Angular app
         run: ng build --configuration production
 
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v3
-        with:
-          name: angular_deploy_dist
-          path: ${{ github.workspace }}/dist
+      - name: copy Dockerfile, nginx conf
+        working-directory: ./angular-gke
+        run: |-
+          cp ./Dockerfile ./dist/Dockerfile
+          cp ./nginx.conf ./dist/nginx.conf
 
-  deploy:
-    runs-on: ubuntu-latest # If you are using Nginx server
-    environment: Development
-    needs: build
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v3
-        with:
-          name: angular_deploy_dist
-          path: ${{ github.workspace }}/angular_deploy_dist
-
-      - name: Remove Files on Nginx Server
-        uses: appleboy/ssh-action@master
-        env:
-          AZURE_VM_ADMINISTRATOR : ${{ secrets.AZURE_VM_ADMINISTRATOR }}
-          AZURE_VM_IP_ADDRESS : ${{ secrets.AZURE_VM_IP_ADDRESS }}
-          AZURE_VM_SSH_PRIVATE_KEY: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}
-        with:
-          # SSH host address.
-          host: ${{ env.AZURE_VM_IP_ADDRESS }}
-          # SSH username.
-          username: ${{ env.AZURE_VM_ADMINISTRATOR }}
-          # Path to the SSH private key file.
-          key: ${{ env.AZURE_VM_SSH_PRIVATE_KEY}}
-          # Commands to be executed.
-          script: |
-            mkdir -p testapplication
-            rm -rf testapplication/*
-
-      - name: Check Download Artifact
+      # Container build and push to a Azure Container Registry (ACR)
+      - id: docker-build-push
+        name: Docker build and push to container registry
+        working-directory: ./dist
         run: |
-          cd ${{ github.workspace }}/angular_deploy_dist
-          ls
-
-      - name: Deploy Files to Nginx Server
-        uses: appleboy/scp-action@master
-        env:
-          AZURE_VM_ADMINISTRATOR : ${{ secrets.AZURE_VM_ADMINISTRATOR }}
-          AZURE_VM_IP_ADDRESS : ${{ secrets.AZURE_VM_IP_ADDRESS }}
-          AZURE_VM_SSH_PRIVATE_KEY: ${{ secrets.AZURE_VM_SSH_PRIVATE_KEY }}
-        with:
-          # SSH host address.
-          host: ${{ env.AZURE_VM_IP_ADDRESS }}
-          # SSH username.
-          username: ${{ env.AZURE_VM_ADMINISTRATOR }}
-          # Path to the SSH private key file.
-          key: ${{ env.AZURE_VM_SSH_PRIVATE_KEY}}
-          source: ${{ github.workspace }}/angular_deploy_dist/
-          target: testapplication # Specify the path of the target folder on the server (e.g., /var/www/html/front/)
-          strip_components: 2
+          docker build . -t ${{ env.AZURE_CONATINER_REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}
+          docker push ${{ env.AZURE_CONATINER_REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}
