@@ -68,7 +68,7 @@ jobs:
         uses: 'azure/aci-deploy@v1'
         with:
           resource-group: 'rg-dev-westeurope'
-          dns-name-label: 'genai.ghgmdxejgxf9eabk.westeurope.azurecontainer.io'
+          dns-name-label: 'genai'
           image: ${{ env.AZURE_CONATINER_REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
           registry-login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
           registry-username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
